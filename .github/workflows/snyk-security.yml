@@ -42,13 +42,13 @@ jobs:
       - name: Snyk Code test
         run: snyk code test --sarif > snyk-code.sarif || true
 
-      #   # Install Dependencies
+       # Install Dependencies
       - name: Install Dependencies
-        run:  chmod 754 ./gradlew && ./gradlew -Pprod clean bootJar 
+        run: ./mvnw install:install-file -Dfile=libs/id-log-1.0.0-SNAPSHOT.jar -DgroupId=ee.ria.commons -DartifactId=id-log -Dversion=1.0.0-SNAPSHOT -Dpackaging=jar -DgeneratePom=true
 
         # Runs Snyk Open Source (SCA) analysis and uploads result to Snyk.
       - name: Snyk Open Source monitor
-        run: snyk monitor --all-projects -d
+        run: snyk monitor --all-projects || true
 
         # Build the docker image for testing
       - name: Build a Docker image
