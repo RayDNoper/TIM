@@ -10,12 +10,15 @@ import ee.eesti.authentication.controller.HeartBeatController;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.oauth2.client.endpoint.NimbusAuthorizationCodeTokenResponseClient;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -32,8 +35,9 @@ import java.util.Arrays;
  */
 @Configuration
 @Slf4j
+@EnableWebSecurity(debug = true)
 @PropertySources(@PropertySource(value = {"file:${tara-integration.properties}"}, ignoreResourceNotFound = true))
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class SecurityConfiguration {
     @Value("${frontpage.redirect.url}")
     private String frontPageRedirectUrl;
     @Value("${cors.allowedOrigins:*}")
@@ -58,46 +62,44 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         this.accessTokenResponseClient = accessTokenResponseClient;
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf().disable() // needed for JWT verification
-                .cors()
-                .and()
-                .headers().contentSecurityPolicy(contentSecurityPolicy).and()
-                .and()
-                .authorizeRequests()
-                .antMatchers("/v2/api-docs",
-                        "/swagger-resources/configuration/ui",
-                        "/swagger-resources",
-                        "/swagger-resources/configuration/security",
-                        "/swagger-ui.html",
-                        "/webjars/**",
-                        HeartBeatController.URL)
-                .permitAll()
-                .antMatchers("/cancel-auth")
-                .permitAll()
-                .antMatchers("/jwt/custom-jwt-generate",
-                        "/jwt/custom-jwt-userinfo",
-                        "/jwt/change-jwt-role")
-                .access(getAllowedIps())
-                .antMatchers("/jwt/**")
-                .permitAll()
-                .antMatchers("/**").authenticated()
-                .and().logout()
-                .logoutUrl("/logout")
-                .logoutSuccessUrl(frontPageRedirectUrl)
-                .and()
-                .addFilterBefore(filter, OAuth2AuthorizationRequestRedirectFilter.class)
-                .oauth2Login()
-                .loginPage(frontPageRedirectUrl)
-                .redirectionEndpoint()
-                .baseUri("/authenticate")
-                .and()
-                .tokenEndpoint()
-                .accessTokenResponseClient(accessTokenResponseClient)
-                .and()
-                .successHandler(authenticationSuccessHandler);
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .disable())
+                .cors(Customizer.withDefaults())
+                .headers(header -> header.contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)))
+                .authorizeRequests(auth ->
+                    auth.requestMatchers("/v2/api-docs",
+                            "/swagger-resources/configuration/ui",
+                            "/swagger-resources",
+                            "/swagger-resources/configuration/security",
+                            "/swagger-ui.html",
+                            "/webjars/**",
+                            HeartBeatController.URL)
+                        .permitAll()
+                        .requestMatchers("/cancel-auth")
+                        .permitAll()
+                        .requestMatchers("/jwt/custom-jwt-generate",
+                            "/jwt/custom-jwt-userinfo",
+                            "/jwt/change-jwt-role")
+                        .access(getAllowedIps())
+                        .requestMatchers("/jwt/**")
+                        .permitAll()
+                        .requestMatchers("/**").authenticated())
+                    .logout(logoutUrl ->
+                        logoutUrl.logoutUrl("/logout")
+                            .logoutSuccessUrl(frontPageRedirectUrl))
+                    .addFilterBefore(filter, OAuth2AuthorizationRequestRedirectFilter.class)
+                    .oauth2Login(oauth ->
+                        oauth.loginPage(frontPageRedirectUrl)
+                            .redirectionEndpoint(Customizer.withDefaults())
+                            .authorizationEndpoint(aep -> aep
+                                .baseUri("/authenticate"))
+                                .tokenEndpoint(aot -> aot.accessTokenResponseClient(accessTokenResponseClient))
+                            .successHandler(authenticationSuccessHandler));
+        return http.build();
     }
 
     private String getAllowedIps() {
@@ -111,7 +113,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Bean
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-        return new NimbusAuthorizationCodeTokenResponseClient();
+        return new DefaultAuthorizationCodeTokenResponseClient();
     }
 
 
