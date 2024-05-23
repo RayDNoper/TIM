@@ -76,9 +76,9 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .disable())
-                .cors(Customizer.withDefaults())
+//                .cors(Customizer.withDefaults())
 //                .headers(header -> header.contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)))
-                .authorizeRequests(auth -> auth.requestMatchers("/**").permitAll()
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/**").permitAll()
 /*                    auth.requestMatchers("/v2/api-docs",
                             "/swagger-resources/configuration/ui",
                             "/swagger-resources",
@@ -102,7 +102,7 @@ public class SecurityConfiguration {
                     .addFilterBefore(filter, OAuth2AuthorizationRequestRedirectFilter.class)
                     .oauth2Login(oauth ->
                         oauth.clientRegistrationRepository(clientRegistrationRepository())
-                                .loginPage(frontPageRedirectUrl)
+                                .loginPage("/authenticate")
                                 .redirectionEndpoint(
                                     endpoint ->
                                             endpoint.baseUri("/oauth2/authorization/tara"))
@@ -193,7 +193,10 @@ public class SecurityConfiguration {
 
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
-        log.info("SecurityConfiguration.clientRegistrationRepository(): triggered");
+        log.info("SecurityConfiguration.clientRegistrationRepository(): triggered with "
+                + authorizationUri
+                + redirectUrlTemplate
+                + tokenUri);
         return new InMemoryClientRegistrationRepository(
                 ClientRegistration
                         .withRegistrationId(REGISTRATION_ID)
