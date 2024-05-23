@@ -16,7 +16,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
@@ -24,6 +28,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+
+import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /**
  * OAuth security configuration
@@ -60,18 +66,20 @@ public class SecurityConfiguration {
         this.authenticationSuccessHandler = authenticationSuccessHandler;
         this.filter = filter;
         this.accessTokenResponseClient = accessTokenResponseClient;
+        log.info("SecurityConfiguration filter:"+ filter.toString());
     }
 
     @Bean
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        log.info("SecurityConfiguration.filterChain:" + http );
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .disable())
                 .cors(Customizer.withDefaults())
-                .headers(header -> header.contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)))
-                .authorizeRequests(auth ->
-                    auth.requestMatchers("/v2/api-docs",
+//                .headers(header -> header.contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)))
+                .authorizeRequests(auth -> auth.requestMatchers("/**").permitAll()
+/*                    auth.requestMatchers("/v2/api-docs",
                             "/swagger-resources/configuration/ui",
                             "/swagger-resources",
                             "/swagger-resources/configuration/security",
@@ -87,14 +95,17 @@ public class SecurityConfiguration {
                         .access(getAllowedIps())
                         .requestMatchers("/jwt/**")
                         .permitAll()
-                        .requestMatchers("/**").authenticated())
+                        .requestMatchers("/**").authenticated()*/)
                     .logout(logoutUrl ->
                         logoutUrl.logoutUrl("/logout")
                             .logoutSuccessUrl(frontPageRedirectUrl))
                     .addFilterBefore(filter, OAuth2AuthorizationRequestRedirectFilter.class)
                     .oauth2Login(oauth ->
-                        oauth.loginPage(frontPageRedirectUrl)
-                            .redirectionEndpoint(Customizer.withDefaults())
+                        oauth.clientRegistrationRepository(clientRegistrationRepository())
+                                .loginPage(frontPageRedirectUrl)
+                                .redirectionEndpoint(
+                                    endpoint ->
+                                            endpoint.baseUri("/oauth2/authorization/tara"))
                             .authorizationEndpoint(aep -> aep
                                 .baseUri("/authenticate"))
                                 .tokenEndpoint(aot -> aot.accessTokenResponseClient(accessTokenResponseClient))
@@ -160,4 +171,43 @@ public class SecurityConfiguration {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
+    private static final String REGISTRATION_ID = "tara";
+    @Value("${security.oauth2.client.user-authorization-uri}")
+    String authorizationUri;
+    @Value("${security.oauth2.client.client-id}")
+    String clientId;
+    @Value("${security.oauth2.client.client-id}")
+    String clientName;
+    @Value("${security.oauth2.client.client-secret}")
+    String clientSecret;
+    @Value("${security.oauth2.client.registered-redirect-uri}")
+    String redirectUrlTemplate;
+    @Value("${security.oauth2.client.access-token-uri}")
+    String tokenUri;
+    @Value("${security.oauth2.resource.jwk.key-set-uri}")
+    String jwkSetUri;
+    @Value("${security.oauth2.client.scope}")
+    String scope;
+
+
+    @Bean
+    public ClientRegistrationRepository clientRegistrationRepository() {
+        log.info("SecurityConfiguration.clientRegistrationRepository(): triggered");
+        return new InMemoryClientRegistrationRepository(
+                ClientRegistration
+                        .withRegistrationId(REGISTRATION_ID)
+                        .authorizationUri(authorizationUri)
+                        .clientId(clientId)
+                        .clientName(clientName)
+                        .clientSecret(clientSecret)
+                        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                        .redirectUri(redirectUrlTemplate)
+                        .tokenUri(tokenUri)
+                        .jwkSetUri(jwkSetUri)
+                        .scope(defaultString(scope).split("[\\s]+"))
+                        .build());
+    }
+
+
 }
