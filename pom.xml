@@ -182,13 +182,6 @@
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/net.minidev/json-smart -->
-        <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>2.5.1</version>
-        </dependency>
-
     </dependencies>
 
     <build>

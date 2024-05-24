@@ -1,10 +1,14 @@
 package ee.eesti.authentication.configuration;
 
-//import com.nimbusds.jose.shaded.json.JSONArray;
-//import com.nimbusds.jose.shaded.json.JSONObject;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
+// import com.nimbusds.jose.shaded.json.JSONArray;
+import com.nimbusds.jose.JWSObject;
+
+//import net.minidev.json.JSONArray;
+//import net.minidev.json.JSONObject;
+
 import com.nimbusds.jwt.SignedJWT;
+
+
 import ee.eesti.authentication.configuration.jwt.JwtUtils;
 import ee.eesti.authentication.constant.LegacyPortalIntegrationConfig;
 import ee.eesti.authentication.domain.UserInfo;
@@ -26,6 +30,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 import static ee.eesti.authentication.configuration.CustomSessionAttributeSecurityFilter.CALLBACK_URL;
@@ -76,13 +81,13 @@ public class AuthenticationSuccessHandler extends SavedRequestAwareAuthenticatio
 
         UserInfo userInfo = new UserInfo();
         String personalCode = (String) casted.getPrincipal().getAttributes().get("sub");
-        JSONObject profileAttributes = (JSONObject) casted.getPrincipal().getAttributes().get("profile_attributes");
+        LinkedHashMap profileAttributes = (LinkedHashMap) casted.getPrincipal().getAttributes().get("profile_attributes");
 
         userInfo.setPersonalCode(personalCode);
         userInfo.setAuthenticatedAs(personalCode);
         userInfo.setHash(getUniqueRandomHash());
-        userInfo.setFirstName(profileAttributes.getAsString("given_name"));
-        userInfo.setLastName(profileAttributes.getAsString("family_name"));
+        userInfo.setFirstName((String) profileAttributes.get("given_name"));
+        userInfo.setLastName((String) profileAttributes.get("family_name"));
         userInfo.setLoggedInDate(new Date());
         userInfo.setLoginExpireDate(
                 DateUtils.addMinutes(
