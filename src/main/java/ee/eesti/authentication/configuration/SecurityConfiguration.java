@@ -76,10 +76,10 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .disable())
-//                .cors(Customizer.withDefaults())
-//                .headers(header -> header.contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/**").permitAll()
-/*                    auth.requestMatchers("/v2/api-docs",
+                .cors(Customizer.withDefaults())
+                .headers(header -> header.contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)))
+                .authorizeRequests(auth -> // auth.requestMatchers("/**").permitAll()
+                    auth.requestMatchers("/v2/api-docs",
                             "/swagger-resources/configuration/ui",
                             "/swagger-resources",
                             "/swagger-resources/configuration/security",
@@ -95,7 +95,7 @@ public class SecurityConfiguration {
                         .access(getAllowedIps())
                         .requestMatchers("/jwt/**")
                         .permitAll()
-                        .requestMatchers("/**").authenticated()*/)
+                        .requestMatchers("/**").authenticated())
                     .logout(logoutUrl ->
                         logoutUrl.logoutUrl("/logout")
                             .logoutSuccessUrl(frontPageRedirectUrl))
