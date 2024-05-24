@@ -1,16 +1,11 @@
 package ee.eesti.authentication.configuration;
 
-//import com.nimbusds.jose.shaded.json.JSONArray;
-//import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 
 import com.nimbusds.jwt.SignedJWT;
 import ee.eesti.authentication.configuration.jwt.JwtUtils;
 import ee.eesti.authentication.constant.LegacyPortalIntegrationConfig;
 import ee.eesti.authentication.domain.UserInfo;
-import ee.eesti.authentication.enums.ChannelType;
 import ee.eesti.authentication.service.JwtTokenInfoService;
 import ee.eesti.authentication.service.SessionsService;
 import lombok.extern.slf4j.Slf4j;

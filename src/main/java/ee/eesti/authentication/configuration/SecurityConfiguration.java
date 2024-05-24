@@ -41,7 +41,7 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
  */
 @Configuration
 @Slf4j
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity(debug = false)
 @PropertySources(@PropertySource(value = {"file:${tara-integration.properties}"}, ignoreResourceNotFound = true))
 public class SecurityConfiguration {
     @Value("${frontpage.redirect.url}")
