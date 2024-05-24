@@ -1,12 +1,11 @@
 package ee.eesti.authentication.configuration;
 
-import com.nimbusds.jose.shaded.json.JSONArray;
-import com.nimbusds.jose.shaded.json.JSONObject;
+import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
+
 import com.nimbusds.jwt.SignedJWT;
 import ee.eesti.authentication.configuration.jwt.JwtUtils;
 import ee.eesti.authentication.constant.LegacyPortalIntegrationConfig;
 import ee.eesti.authentication.domain.UserInfo;
-import ee.eesti.authentication.enums.ChannelType;
 import ee.eesti.authentication.service.JwtTokenInfoService;
 import ee.eesti.authentication.service.SessionsService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +16,9 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -74,13 +73,13 @@ public class AuthenticationSuccessHandler extends SavedRequestAwareAuthenticatio
 
         UserInfo userInfo = new UserInfo();
         String personalCode = (String) casted.getPrincipal().getAttributes().get("sub");
-        JSONObject profileAttributes = (JSONObject) casted.getPrincipal().getAttributes().get("profile_attributes");
+        LinkedTreeMap profileAttributes = (LinkedTreeMap) casted.getPrincipal().getAttributes().get("profile_attributes");
 
         userInfo.setPersonalCode(personalCode);
         userInfo.setAuthenticatedAs(personalCode);
         userInfo.setHash(getUniqueRandomHash());
-        userInfo.setFirstName(profileAttributes.getAsString("given_name"));
-        userInfo.setLastName(profileAttributes.getAsString("family_name"));
+        userInfo.setFirstName((String) profileAttributes.get("given_name"));
+        userInfo.setLastName((String) profileAttributes.get("family_name"));
         userInfo.setLoggedInDate(new Date());
         userInfo.setLoginExpireDate(
                 DateUtils.addMinutes(
