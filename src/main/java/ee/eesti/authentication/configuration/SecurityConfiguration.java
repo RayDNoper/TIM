@@ -41,7 +41,7 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
  */
 @Configuration
 @Slf4j
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity(debug = false)
 @PropertySources(@PropertySource(value = {"file:${tara-integration.properties}"}, ignoreResourceNotFound = true))
 public class SecurityConfiguration {
     @Value("${frontpage.redirect.url}")
@@ -102,14 +102,14 @@ public class SecurityConfiguration {
                     .addFilterBefore(filter, OAuth2AuthorizationRequestRedirectFilter.class)
                     .oauth2Login(oauth ->
                         oauth.clientRegistrationRepository(clientRegistrationRepository())
-                                .loginPage("/authenticate")
+                                .loginPage(frontPageRedirectUrl)
                                 .redirectionEndpoint(
                                     endpoint ->
                                             endpoint.baseUri("/oauth2/authorization/tara"))
                             .authorizationEndpoint(aep -> aep
                                 .baseUri("/authenticate"))
                                 .tokenEndpoint(aot -> aot.accessTokenResponseClient(accessTokenResponseClient))
-                            .successHandler(authenticationSuccessHandler));
+                                .successHandler(authenticationSuccessHandler));
         return http.build();
     }
 
