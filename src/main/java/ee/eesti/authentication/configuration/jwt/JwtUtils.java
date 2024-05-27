@@ -151,6 +151,7 @@ public class JwtUtils {
         Supplier<Cookie> cookieSupplier = () -> {
             Cookie sessionCookie = new Cookie(legacyPortalIntegrationConfig.getSessionCookieName(),
                     sessionsEntity.getSessionId().replaceAll("[\n\r]+"," "));
+            sessionCookie.setHttpOnly(true);
             sessionCookie.setSecure(secureCookie);
             sessionCookie.setPath("/");
             sessionCookie.setDomain(legacyPortalIntegrationConfig.getSessionCookieDomain());
