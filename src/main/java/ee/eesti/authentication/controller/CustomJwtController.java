@@ -92,10 +92,10 @@ public class CustomJwtController {
             return emptyOkResponse;
         }
 
-        Cookie cookie = new Cookie(request.getJwtName(), signedJWT.serialize());
+        Cookie cookie = new Cookie(request.getJwtName(), signedJWT.serialize().replaceAll("[\n\r]+"," "));
         cookie.setHttpOnly(true);
         cookie.setSecure(secureCookie);
-        cookie.setDomain(legacyPortalIntegrationConfig.getSessionCookieDomain());
+        cookie.setDomain(legacyPortalIntegrationConfig.getSessionCookieDomain().replaceAll("[\n\r]+"," "));
 
         response.addCookie(cookie);
 

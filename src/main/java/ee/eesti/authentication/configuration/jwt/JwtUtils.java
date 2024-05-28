@@ -21,6 +21,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -148,7 +149,9 @@ public class JwtUtils {
     public Cookie getLegacySessionCookie(HttpServletRequest request, SessionsEntity sessionsEntity, boolean alwaysCreateCookie) {
 
         Supplier<Cookie> cookieSupplier = () -> {
-            Cookie sessionCookie = new Cookie(legacyPortalIntegrationConfig.getSessionCookieName(), sessionsEntity.getSessionId());
+            Cookie sessionCookie = new Cookie(legacyPortalIntegrationConfig.getSessionCookieName(),
+                    sessionsEntity.getSessionId().replaceAll("[\n\r]+"," "));
+            sessionCookie.setHttpOnly(true);
             sessionCookie.setSecure(secureCookie);
             sessionCookie.setPath("/");
             sessionCookie.setDomain(legacyPortalIntegrationConfig.getSessionCookieDomain());

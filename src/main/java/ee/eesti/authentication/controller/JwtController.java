@@ -358,7 +358,6 @@ public class JwtController {
         SignedJWT signedJwt = jwtUtils.createSignedJwt(jwtTokenId, userInfo);
         jwtTokenInfoService.createJwtTokenInfo(jwtTokenId, sessionEntity.getSessionId(), new Timestamp(userInfo.getLoginExpireDate().getTime()));
 
-
         Cookie legacySessionCookie = jwtUtils.getLegacySessionCookie(request, sessionEntity, true);
         response.addCookie(legacySessionCookie);
 
@@ -433,10 +432,10 @@ public class JwtController {
 
     private void removeCookie(HttpServletResponse response, Cookie c, String domain, String path) {
         Cookie cookie = new Cookie(c.getName(), null);
-        cookie.setDomain(domain);
+        cookie.setDomain(domain.replaceAll("[\n\r]+"," "));
         cookie.setMaxAge(0);
         cookie.setSecure(c.getSecure());
-        cookie.setPath(path);
+        cookie.setPath(path.replaceAll("[\n\r]+"," "));
         response.addCookie(cookie);
     }
 
