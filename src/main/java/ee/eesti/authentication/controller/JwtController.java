@@ -436,6 +436,7 @@ public class JwtController {
         cookie.setMaxAge(0);
         cookie.setSecure(c.getSecure());
         cookie.setPath(JwtUtils.removeNewlines(path));
+        response.addCookie(cookie);
     }
 
     private boolean isBlackListable(Cookie c) {
