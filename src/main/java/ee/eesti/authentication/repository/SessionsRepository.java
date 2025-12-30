@@ -2,6 +2,7 @@ package ee.eesti.authentication.repository;
 
 import ee.eesti.authentication.repository.entity.SessionsEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -13,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface SessionsRepository extends JpaRepository<SessionsEntity, Long> {
 
+  @Query()
   Optional<SessionsEntity> findBySessionId(String sessionId);
 
   List<SessionsEntity> findAllBySessionIdInAndValidToAfter(Collection<String> sessionsId, LocalDateTime validTo);

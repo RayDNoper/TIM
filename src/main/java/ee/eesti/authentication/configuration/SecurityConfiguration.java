@@ -7,12 +7,17 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import ee.eesti.authentication.configuration.jwt.JwtUtils;
 import ee.eesti.authentication.constant.JwtSignatureConfig;
 import ee.eesti.authentication.controller.HeartBeatController;
+import ee.eesti.authentication.security.CustomAuthenticationFailureHandler;
+import ee.eesti.authentication.security.CustomAuthenticationRequestResolver;
+import ee.eesti.authentication.security.CustomAuthenticationSuccessHandler;
+import ee.eesti.authentication.security.RedisOidcSessionRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
@@ -22,7 +27,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -70,12 +75,17 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    protected SecurityFilterChain filterChain(HttpSecurity http,
+                                              RedisOidcSessionRegistry sessionRegistry,
+                                              CustomAuthenticationSuccessHandler authenticationSuccessHandler,
+                                              CustomAuthenticationFailureHandler authenticationFailureHandler,
+                                              CustomAuthenticationRequestResolver auth2AuthorizationRequestResolver) throws Exception {
         log.info("SecurityConfiguration.filterChain:" + http );
         http
-                .csrf(csrf -> csrf
+/*                .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .disable())
+                        .disable())*/
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .headers(header -> header.contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)))
                 .authorizeRequests(auth -> // auth.requestMatchers("/**").permitAll()
@@ -108,13 +118,21 @@ public class SecurityConfiguration {
                         logoutUrl.logoutUrl("/logout")
                             .logoutSuccessUrl(frontPageRedirectUrl))
                     .addFilterBefore(filter, OAuth2AuthorizationRequestRedirectFilter.class)
-                    .oauth2Login(oauth ->
+/*                    .oauth2Login(oauth ->
                         oauth.clientRegistrationRepository(clientRegistrationRepository())
                                 .loginPage(frontPageRedirectUrl)
                                 .redirectionEndpoint(
                                     endpoint -> endpoint.baseUri("/authenticate"))
                             .tokenEndpoint(aot -> aot.accessTokenResponseClient(accessTokenResponseClient))
-                            .successHandler(authenticationSuccessHandler));
+                            .successHandler(authenticationSuccessHandler));*/
+                .oauth2Login(oauth2 -> oauth2
+                        .oidcSessionRegistry(sessionRegistry)
+                        .successHandler(authenticationSuccessHandler)
+                        .failureHandler(authenticationFailureHandler)
+                        .authorizationEndpoint(authEndpoint ->
+                            authEndpoint.authorizationRequestResolver(auth2AuthorizationRequestResolver))
+                        .loginProcessingUrl("/sso/oauth2/code/{registrationId}")
+                );
         return http.build();
     }
 
